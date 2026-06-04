@@ -1,0 +1,7 @@
+---
+- name: "Créer les bootstrap repositories Uyuni"
+  hosts: uyuni_server
+  gather_facts: false
+
+  roles:
+    - bootstrap_repo

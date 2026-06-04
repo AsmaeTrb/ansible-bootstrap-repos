@@ -1,0 +1,43 @@
+---
+- name: "Considérer l'OS comme synchronisé"
+  set_fact:
+    current_os_synced: true
+
+- name: "Afficher l'OS en cours"
+  debug:
+    msg: "Traitement de {{ current_os.name }}"
+
+- name: "Lire les logs des channels"
+  command: >
+    mgrctl exec --
+    cat /var/log/rhn/reposync/{{ channel_name }}.log
+  loop: "{{ current_os.channels }}"
+  loop_control:
+    loop_var: channel_name
+  register: channel_logs
+  changed_when: false
+  failed_when: false
+
+- name: "Marquer l'OS comme non synchronisé"
+  set_fact:
+    current_os_synced: false
+  loop: "{{ channel_logs.results }}"
+  loop_control:
+    loop_var: log_result
+  when: "'Sync completed.' not in log_result.stdout"
+
+- name: "Afficher le statut final"
+  debug:
+    msg: "{{ current_os.name }} => {{ current_os_synced }}"
+
+- name: "Créer le bootstrap repository"
+  command: >
+    mgrctl exec --
+    mgr-create-bootstrap-repo --create {{ current_os.bootstrap_repo }}
+  when: current_os_synced
+  register: bootstrap_result
+  failed_when: false
+- name: "Afficher le résultat bootstrap"
+  debug:
+    var: bootstrap_result.stdout_lines
+  when: current_os_synced

@@ -1,0 +1,6 @@
+---
+- name: "Traiter chaque OS"
+  include_tasks: process_one_os.yml
+  loop: "{{ os_list }}"
+  loop_control:
+    loop_var: current_os
